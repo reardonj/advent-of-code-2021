@@ -1,8 +1,6 @@
-## sbt project compiled with Scala 3
+## Overview
 
-### Usage
+[Advent of Code 2021](https://adventofcode.com/2021/) solutions, written using Scala 3 & fs2.
 
-This is a normal sbt project. You can compile code with `sbt compile`, run it with `sbt run`, and `sbt console` will start a Scala 3 REPL.
-
-For more information on the sbt-dotty plugin, see the
-[scala3-example-project](https://github.com/scala/scala3-example-project/blob/main/README.md).
+Solutions take data from standard input, and can be run using `sbt "run <day>a|b" < inputFile`. Where 
+`<day>` is the day number, `a` corresponding to part 1, and `b` corresponding to part 2.
