@@ -29,19 +29,21 @@ object Day2:
       case Array("up", x)      => Up(x.toInt)
     }
 
-case class SubState(aim: Int, x: Int, y: Int)
+case class SubState(aim: Int, x: Int, y: Int):
+  def add(aim: Int = 0, x: Int = 0, y: Int = 0) =
+    copy(aim = this.aim + aim, x = this.x + x, y = this.y + y)
 
 sealed trait SubCommand:
   def execute(state: SubState): SubState
 
 case class Forward(amount: Int) extends SubCommand:
   def execute(state: SubState): SubState =
-    state.copy(x = state.x + amount, y = state.y + state.aim * amount)
+    state.add(x = amount, y = state.aim * amount)
 
 case class Down(amount: Int) extends SubCommand:
   def execute(state: SubState): SubState =
-    state.copy(aim = state.aim + amount)
+    state.add(aim = amount)
 
 case class Up(amount: Int) extends SubCommand:
   def execute(state: SubState): SubState =
-    state.copy(aim = state.aim - amount)
+    state.add(aim = -amount)
