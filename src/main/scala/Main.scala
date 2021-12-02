@@ -22,5 +22,6 @@ object AdventOfCode extends IOApp:
   val challenges: Map[String, Pipe[IO, String, Any]] = Map(
     "1a" -> Day1.a,
     "1b" -> Day1.b,
-    "2a" -> Day2.a
+    "2a" -> Day2.a,
+    "2b" -> Day2.b
   )

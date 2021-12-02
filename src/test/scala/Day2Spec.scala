@@ -18,3 +18,7 @@ class Day2Spec extends AnyFlatSpec with Matchers:
   "part a" should "yield 150" in {
     stream.through(Day2.a).toList.head mustBe 150
   }
+
+  "part a" should "yield 900" in {
+    stream.through(Day2.b).toList.head mustBe 900
+  }
