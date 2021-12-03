@@ -11,8 +11,9 @@ object AdventOfCode:
   }
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =
-    Seq(Day1, Day2).zipWithIndex.flatMap { case (day, idx) =>
+    Seq(Day1, Day2, Day3).zipWithIndex.flatMap { case (day, idx) =>
       day.challenges.map { case (name, challenge) =>
-        s"${idx + 1}$name" -> (s"day${idx + 1}.txt", challenge)
+        val day = idx + 1
+        s"${day}$name" -> (s"day${day}.txt", challenge)
       }
     }.toMap
