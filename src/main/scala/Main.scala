@@ -1,14 +1,18 @@
 import java.nio.charset.Charset
 import scala.io.BufferedSource
+import scala.io.Source
 
 object AdventOfCode:
-  @main def run(challenge: String) = println(
-    challenges(challenge)(BufferedSource(System.in).getLines)
-  )
+  @main def run(challengesToRun: String*) = for {
+    challenge <- challengesToRun
+  } yield {
+    val (file, pipeline) = challenges(challenge)
+    println(challenge + ": " + pipeline(Source.fromResource(file).getLines))
+  }
 
-  val challenges: Map[String, Iterator[String] => Any] =
+  val challenges: Map[String, (String, Iterator[String] => Any)] =
     Seq(Day1, Day2).zipWithIndex.flatMap { case (day, idx) =>
       day.challenges.map { case (name, challenge) =>
-        s"${idx + 1}$name" -> challenge
+        s"${idx + 1}$name" -> (s"day${idx + 1}.txt", challenge)
       }
     }.toMap
