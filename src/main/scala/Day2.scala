@@ -1,19 +1,18 @@
-import fs2._
-
-object Day2:
+object Day2 extends Day:
   // https://adventofcode.com/2021/day/2
-  def a[F[_]]: Pipe[F, String, Int] = stream =>
+  def a(stream: Iterator[String]): Int =
     stream
       .map(directionToVector)
-      .fold((0, 0)) { case ((ax, ay), (bx, by)) => (ax + bx, ay + by) }
-      .map { case (x, y) => x * y }
+      .fold((0, 0)) { case ((ax, ay), (bx, by)) => (ax + bx, ay + by) } match {
+      case (x, y) => x * y
+    }
 
   // https://adventofcode.com/2021/day/2#part2
-  def b[F[_]]: Pipe[F, String, Int] = stream =>
+  def b(stream: Iterator[String]): Int =
     stream
       .map(directionToCommand)
-      .fold(SubState(0, 0, 0))((state, command) => command.execute(state))
-      .map(state => state.x * state.y)
+      .foldLeft(SubState(0, 0, 0))((state, command) => command.execute(state))
+      .value
 
   private def directionToVector(line: String): (Int, Int) =
     line.split(" ") match {
@@ -32,6 +31,8 @@ object Day2:
 case class SubState(aim: Int, x: Int, y: Int):
   def add(aim: Int = 0, x: Int = 0, y: Int = 0) =
     copy(aim = this.aim + aim, x = this.x + x, y = this.y + y)
+
+  def value: Int = x * y
 
 sealed trait SubCommand:
   def execute(state: SubState): SubState
