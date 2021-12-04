@@ -6,14 +6,14 @@ object Day3 extends Day:
       .foldLeft(Seq[Int]())((sum, next) =>
         sum.zipAll(next, 0, 0).map { case (a, b) => a + b }
       )
-    val averages = sums.map(_ * 1d / lines).reverse
-    val gamma = binary(averages.map(n => if n >= 0.5 then 1 else 0))
-    val epsilon = binary(averages.map(n => if n <= 0.5 then 1 else 0))
+    val gamma = binary(sums.map(n => if n >= lines / 2 then 1 else 0))
+    val epsilon = binary(sums.map(n => if n <= lines / 2 then 1 else 0))
 
     gamma * epsilon
   }
+
   def b(stream: Iterator[String]): Any = {
-    val lines = stream.map(line => line.split("").map(_.toInt).toSeq).toSeq
+    val lines = stream.toSeq
     val oxygen =
       filterRatings(lines, 0, Ordering.by { case (k, v) => (v.length, k) })
     val scrubber =
@@ -24,16 +24,17 @@ object Day3 extends Day:
 
   @tailrec
   def filterRatings(
-      lines: Seq[Seq[Int]],
+      lines: Seq[String],
       index: Int,
-      selector: Ordering[(Int, Seq[?])]
+      selector: Ordering[(Char, Seq[?])]
   ): Int = {
     val (_, selected) = lines.groupBy(_.apply(index)).max(selector)
 
-    if (selected.length == 1) then binary(selected.head.reverse)
+    if (selected.length == 1) then Integer.parseInt(selected.head, 2)
     else filterRatings(selected, index + 1, selector)
   }
 
-  def binary(seq: Seq[Int]): Int = seq.zipWithIndex.map { case (value, pos) =>
-    value * Math.pow(2, pos).toInt
+  def binary(seq: Seq[Int]): Int = seq.reverse.zipWithIndex.map {
+    case (value, pos) =>
+      value * Math.pow(2, pos).toInt
   }.sum
