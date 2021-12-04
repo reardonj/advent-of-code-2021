@@ -1,4 +1,3 @@
-import scala.annotation.tailrec
 object Day4 extends Day:
   type Board = Seq[Seq[Option[Int]]]
 
