@@ -2,17 +2,19 @@ import java.nio.charset.Charset
 import scala.io.BufferedSource
 import scala.io.Source
 import scala.util.Try
+import java.io.FileNotFoundException
 
 object AdventOfCode:
   @main def run(challengesToRun: String*) = for {
     challenge <- challengesToRun
     (challengeFileName, pipeline) = challenges(challenge)
     (name, file, solve) <- Seq(
-      (challenge + " example", challengeFileName + ".example", pipeline),
-      (challenge, challengeFileName, pipeline)
+      (s"$challenge -> test", challengeFileName + ".example", pipeline),
+      (s"$challenge -> real", challengeFileName, pipeline)
     )
+    stream <- Try(Source.fromResource(file)).toOption
   } yield {
-    Try(println(name + ": " + solve(Source.fromResource(file).getLines)))
+    println(name + ": " + solve(stream.getLines))
   }
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =
