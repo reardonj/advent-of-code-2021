@@ -3,6 +3,8 @@ import scala.io.BufferedSource
 import scala.io.Source
 import scala.util.Try
 import java.io.FileNotFoundException
+import java.time.Instant
+import java.time.Duration
 
 object AdventOfCode:
   @main def run(challengesToRun: String*) = for {
@@ -14,7 +16,11 @@ object AdventOfCode:
     )
     stream <- Try(Source.fromResource(file)).toOption
   } yield {
-    println(name + ": " + solve(stream.getLines))
+    val starts = Instant.now();
+    val solution = solve(stream.getLines).toString
+    val ends = Instant.now();
+    println(s"$name: $solution")
+    println(s"      ${Duration.between(starts, ends).toMillis} ms")
   }
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =

@@ -14,8 +14,6 @@ object Day9 extends Day:
       neighbours = neighbourPoints(Point(x, y)).map(lookup).flatten
       if neighbours.forall(height < _)
     } yield {
-      //println(neighbours)
-      //println(s"point ($x, $y): $height")
       height
     }
 
@@ -69,7 +67,6 @@ object Day9 extends Day:
       }
 
     findBasins(open)
-      .filter(_.nonEmpty)
       .map(_.size)
       .sorted
       .reverse
