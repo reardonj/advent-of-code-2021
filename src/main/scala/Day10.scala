@@ -1,6 +1,4 @@
 object Day10 extends Day:
-  case class Point(x: Int, y: Int)
-
   def a(stream: Iterator[String]): Any =
     stream.map(parseLine(_).fold(errorScore, _ => 0)).sum
 
