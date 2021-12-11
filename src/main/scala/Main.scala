@@ -34,7 +34,8 @@ object AdventOfCode:
       Day7,
       Day8,
       Day9,
-      Day10
+      Day10,
+      Day11
     ).zipWithIndex.flatMap { case (day, idx) =>
       day.challenges.map { case (name, challenge) =>
         val day = idx + 1
