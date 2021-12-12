@@ -11,16 +11,19 @@ object AdventOfCode:
     challenge <- challengesToRun
     (challengeFileName, pipeline) = challenges(challenge)
     (name, file, solve) <- Seq(
-      (s"$challenge -> test", challengeFileName + ".example", pipeline),
-      (s"$challenge -> real", challengeFileName, pipeline)
+      (s"$challenge -> real", challengeFileName, pipeline),
+      (s"$challenge -> test", challengeFileName + ".example", pipeline)
     )
     stream <- Try(Source.fromResource(file)).toOption
   } yield {
-    val starts = Instant.now();
-    val solution = solve(stream.getLines).toString
-    val ends = Instant.now();
+    val lines = stream.getLines.toSeq.iterator
+
+    val start = System.nanoTime();
+    val solution = solve(lines).toString
+    val ends = System.nanoTime();
+
     println(s"$name: $solution")
-    println(s"      ${Duration.between(starts, ends).toMillis} ms")
+    println(s"      ${Duration.ofNanos(ends - start).toMillis} ms")
   }
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =
