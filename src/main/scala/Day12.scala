@@ -1,4 +1,3 @@
-import scala.collection.SortedSet
 import scala.annotation.tailrec
 object Day12 extends Day:
 
