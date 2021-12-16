@@ -2,22 +2,20 @@ import scala.annotation.tailrec
 object Day14 extends Day:
 
   def a(stream: Iterator[String]): Any =
-    val polymer = stream.next.toCharArray.toList
-    // consume blank line
-    stream.next
-    val insertions = stream
-      .map(_.split(" -> ") match {
-        case Array(pair, i) => List(pair.toCharArray: _*) -> i(0)
-      })
-      .toMap
+    val (polymer, insertions) = readStream(stream)
 
-    val result =
-      (1 to 10).foldLeft(polymer)((p, _) => polymerize(p, insertions))
-    val elementsByFrequency =
-      result.groupBy(identity).mapValues(_.length).toSeq.sortBy(_._2)
+    val result = polymerizeAndCount(10, polymer, insertions)
+    val elementsByFrequency = result.toSeq.sortBy(_._2)
     elementsByFrequency.last._2 - elementsByFrequency.head._2
 
   def b(stream: Iterator[String]): Any =
+    val (polymer, insertions) = readStream(stream)
+
+    val result = polymerizeAndCount(40, polymer, insertions)
+    val elementsByFrequency = result.toSeq.sortBy(_._2)
+    elementsByFrequency.last._2 - elementsByFrequency.head._2
+
+  private def readStream(stream: Iterator[String]) =
     val polymer = stream.next.toCharArray.toSeq
     // consume blank line
     stream.next
@@ -26,82 +24,62 @@ object Day14 extends Day:
         case Array(pair, i) => (pair(0), pair(1)) -> i(0)
       })
       .toMap
+    (polymer, insertions)
 
-    val (result, _) = polymerizeAndCount(40, polymer, insertions, Map(), Map())
-    val elementsByFrequency =
-      result.toSeq.sortBy(_._2)
-    elementsByFrequency.last._2 - elementsByFrequency.head._2
+  private case class Expansion(steps: Int, pair: (Char, Char))
 
-  private def polymerize(
-      polymer: List[Char],
-      insertions: Map[List[Char], Char]
-  ): List[Char] =
-    polymer.head :: polymer
+  private def polymerizeAndCount(
+      steps: Int,
+      polymer: Seq[Char],
+      insertions: Map[(Char, Char), Char]
+  ): Map[Char, Long] =
+    val pairs = polymer
       .sliding(2, 1)
-      .flatMap(pair => List(insertions(pair), pair(1)))
+      .map { case Seq(a, b) => Expansion(steps, (a, b)) }
       .toList
+    val solutions = polymerizeQueue(insertions, Map(), pairs)
+    pairs.foldLeft(Map[Char, Long](polymer.last -> 1))((total, pair) =>
+      mergeCounts(total, solutions(pair))
+    )
 
   @tailrec
-  private def polymerizeAndCount(
-      steps: Int,
-      pair: Seq[Char],
+  private def polymerizeQueue(
       insertions: Map[(Char, Char), Char],
-      count: Map[Char, Long],
-      solutions: Map[(Int, (Char, Char)), Map[Char, Long]]
-  ): (Map[Char, Long], Map[(Int, (Char, Char)), Map[Char, Long]]) = pair match {
-    case Seq(a, b, rest @ _*) =>
-      val (leftCount, leftSolutions) =
-        polymerizeAndCount(steps, (a, b), insertions, solutions)
-
-      val total = mergeCounts(count, leftCount).updatedWith(a)(increment)
-      polymerizeAndCount(
-        steps,
-        pair.tail,
+      solutions: Map[Expansion, Map[Char, Long]],
+      queue: List[Expansion]
+  ): Map[Expansion, Map[Char, Long]] = queue match {
+    case Nil => solutions
+    case (expansion @ Expansion(0, (a, _))) :: rest =>
+      polymerizeQueue(
         insertions,
-        total,
-        leftSolutions
+        solutions + (expansion -> Map(a -> 1L)),
+        rest
       )
-    case Seq(a) => (count.updatedWith(a)(increment), solutions)
-    case _      => (count, solutions)
+    case (e @ Expansion(steps, (a, b))) :: rest =>
+      solutions.get(e) match {
+        case Some(solution) =>
+          polymerizeQueue(insertions, solutions, rest)
+        case None =>
+          val expanded = insertions((a, b))
+          val left = Expansion(steps - 1, (a, expanded))
+          val right = Expansion(steps - 1, (expanded, b))
+          solutions
+            .get(left)
+            .flatMap(l => solutions.get(right).map(r => (l, r))) match {
+            case Some((leftSolution, rightSolution)) =>
+              polymerizeQueue(
+                insertions,
+                solutions + (e -> mergeCounts(leftSolution, rightSolution)),
+                rest
+              )
+            case None =>
+              polymerizeQueue(insertions, solutions, left :: right :: e :: rest)
+          }
+      }
+
   }
 
-  private def polymerizeAndCount(
-      steps: Int,
-      pair: (Char, Char),
-      insertions: Map[(Char, Char), Char],
-      solutions: Map[(Int, (Char, Char)), Map[Char, Long]]
-  ): (Map[Char, Long], Map[(Int, (Char, Char)), Map[Char, Long]]) = pair match
-    case (a, b) =>
-      if steps == 0 then (Map(), solutions)
-      else
-        solutions
-          .get((steps, pair))
-          .map(solution => (solution, solutions))
-          .getOrElse {
-            val next = insertions(pair)
-            val (leftCount, leftSolutions) =
-              polymerizeAndCount(
-                steps - 1,
-                (a, next),
-                insertions,
-                solutions
-              )
-            val (rightCount, rightSolutions) = polymerizeAndCount(
-              steps - 1,
-              (next, b),
-              insertions,
-              leftSolutions
-            )
-
-            val total =
-              mergeCounts(leftCount, rightCount).updatedWith(next)(increment)
-
-            (total, rightSolutions + ((steps, pair) -> total))
-          }
-
-  private def increment(value: Option[Long]) = Some(1 + value.getOrElse(0L))
-
   private def mergeCounts(a: Map[Char, Long], b: Map[Char, Long]) =
-    (a.keySet ++ b.keys).toSeq
-      .map(l => l -> (a.getOrElse(l, 0L) + b.getOrElse(l, 0L)))
-      .toMap
+    a.foldLeft(b) { case (map, (key, value)) =>
+      map.updated(key, map.getOrElse(key, 0L) + value)
+    }
