@@ -46,7 +46,8 @@ object AdventOfCode:
     Day15,
     Day16,
     Day17,
-    day18.Day18
+    day18.Day18,
+    day19.Day19
   )
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =
