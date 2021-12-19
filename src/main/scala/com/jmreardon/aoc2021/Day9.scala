@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 import scala.collection.SeqLike
 import scala.annotation.tailrec
 object Day9 extends Day:

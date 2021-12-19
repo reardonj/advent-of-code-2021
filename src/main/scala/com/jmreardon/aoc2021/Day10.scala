@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day10 extends Day:
   def a(stream: Iterator[String]): Any =
     stream.map(parseLine(_).fold(errorScore, _ => 0)).sum

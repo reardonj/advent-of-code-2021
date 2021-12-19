@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day1 extends Day:
 
   // https://adventofcode.com/2021/day/1

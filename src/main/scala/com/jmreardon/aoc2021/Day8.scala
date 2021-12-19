@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day8 extends Day:
   def a(stream: Iterator[String]): Any =
     stream

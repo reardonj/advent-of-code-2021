@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 trait Day {
   def a(stream: Iterator[String]): Any
   def b(stream: Iterator[String]): Any

@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day4 extends Day:
   type Board = Seq[Seq[Option[Int]]]
 

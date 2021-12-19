@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 import scala.annotation.tailrec
 import scala.collection.mutable.PriorityQueue
 import scala.concurrent.duration.DurationConversions.fromNowConvert

@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day6 extends Day:
   def a(stream: Iterator[String]): Any = simulateDays(stream, 80)
 

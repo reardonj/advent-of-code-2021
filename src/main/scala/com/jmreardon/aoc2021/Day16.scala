@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 import cats.data.State
 object Day16 extends Day:
   def a(stream: Iterator[String]): Any =

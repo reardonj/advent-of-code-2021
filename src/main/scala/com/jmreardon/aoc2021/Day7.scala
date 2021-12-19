@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day7 extends Day:
   def a(stream: Iterator[String]): Any = {
     def distancesTo(value: Int, list: Seq[Int]) =

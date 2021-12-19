@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 import java.nio.charset.Charset
 import scala.io.BufferedSource
 import scala.io.Source
@@ -43,7 +45,8 @@ object AdventOfCode:
     Day14,
     Day15,
     Day16,
-    Day17
+    Day17,
+    day18.Day18
   )
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =

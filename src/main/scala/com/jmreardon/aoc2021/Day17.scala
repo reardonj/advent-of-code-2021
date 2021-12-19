@@ -1,3 +1,4 @@
+package com.jmreardon.aoc2021
 import scala.annotation.tailrec
 object Day17 extends Day:
   def a(stream: Iterator[String]): Any =

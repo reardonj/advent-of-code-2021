@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 import scala.annotation.tailrec
 object Day14 extends Day:
 

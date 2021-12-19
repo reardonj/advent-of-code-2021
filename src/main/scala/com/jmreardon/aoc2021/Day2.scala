@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 object Day2 extends Day:
   // https://adventofcode.com/2021/day/2
   def a(stream: Iterator[String]): Int =
