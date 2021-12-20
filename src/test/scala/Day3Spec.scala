@@ -1,3 +1,5 @@
+package com.jmreardon.aoc2021
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 
