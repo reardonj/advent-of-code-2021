@@ -28,7 +28,7 @@ object AdventOfCode:
     println(s"      ${Duration.ofNanos(ends - start).toMillis} ms")
   }
 
-  val days = Seq(
+  val days = Seq[Day](
     Day1,
     Day2,
     Day3,
@@ -47,7 +47,8 @@ object AdventOfCode:
     Day16,
     Day17,
     day18.Day18,
-    day19.Day19
+    day19.Day19,
+    day20.Day20
   )
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =
