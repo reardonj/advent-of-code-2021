@@ -13,8 +13,8 @@ object AdventOfCode:
     challenge <- challengesToRun
     (challengeFileName, pipeline) = challenges(challenge)
     (name, file, solve) <- Seq(
-      (s"$challenge -> real", challengeFileName, pipeline),
-      (s"$challenge -> test", challengeFileName + ".example", pipeline)
+      (s"$challenge -> test", challengeFileName + ".example", pipeline),
+      (s"$challenge -> real", challengeFileName, pipeline)
     )
     stream <- Try(Source.fromResource(file)).toOption
   } yield {
@@ -48,7 +48,8 @@ object AdventOfCode:
     Day17,
     day18.Day18,
     day19.Day19,
-    day20.Day20
+    day20.Day20,
+    day21.Day21
   )
 
   val challenges: Map[String, (String, Iterator[String] => Any)] =
