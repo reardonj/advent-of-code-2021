@@ -13,7 +13,6 @@ object Day22 extends Day:
 
   def b(stream: Iterator[String]): Any =
     parse(stream)
-      //.takeWhile(_.region.containedBy(Region(-50 to 50, -50 to 50, -50 to 50)))
       .foldLeft(Seq[(Int, Region)]())(handleCommand)
       .map { case (mod, region) => region.volume * mod }
       .sum
@@ -21,11 +20,11 @@ object Day22 extends Day:
   private def handleCommand(
       regions: Seq[(Int, Region)],
       command: RegionCommand
-  ): Seq[(Int, Region)] = command match
-    case RegionCommand(true, region) =>
-      regions ++ regions.flatMap(addNegation(region, _)) :+ (1, region)
-    case RegionCommand(false, region) =>
-      regions ++ regions.flatMap(addNegation(region, _))
+  ): Seq[(Int, Region)] =
+    val negations = regions ++ regions.flatMap(addNegation(command.region, _))
+    command match
+      case RegionCommand(true, region) => negations :+ (1, region)
+      case RegionCommand(false, _)     => negations
 
   private def addNegation(
       region: Region,
@@ -36,6 +35,12 @@ object Day22 extends Day:
 
   private case class Region(x: Range, y: Range, z: Range):
     def volume = BigInt(x.length) * BigInt(y.length) * BigInt(z.length)
+
+    def containedBy(that: Region): Boolean =
+      containedBy(x, that.x) && containedBy(y, that.y) && containedBy(z, that.z)
+
+    private def containedBy(a: Range, b: Range) =
+      b.start <= a.start && b.end >= a.end
 
     def within(that: Region): Option[Region] =
       val bound = Region(
