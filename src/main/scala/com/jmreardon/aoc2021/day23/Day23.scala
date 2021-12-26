@@ -9,14 +9,14 @@ object Day23 extends Day:
     val scenario = Scenario(2)
     val initial = scenario.parse(stream)
     println(initial)
-    dijkstra(initial).map(_._1)
+    aStar(initial).map(_._1)
 
   def b(stream: Iterator[String]): Any =
     val scenario = Scenario(4)
     val modified = stream.take(1) ++ Seq("DCBA", "DBAC") ++ stream.take(1)
     val initial = scenario.parse(modified)
     println(initial)
-    dijkstra(initial).map(_._1)
+    aStar(initial).map(_._1)
 
   private case class Pos(x: Int, y: Int):
     override def toString() = s"$x,$y"
@@ -43,28 +43,21 @@ object Day23 extends Day:
       case "D" => Kind.D
       case _   => ???
 
-    enum Kind:
-      case A, B, C, D
+    enum Kind(val energy: Int, val destination: Int):
+      case A extends Kind(1, 2)
+      case B extends Kind(10, 4)
+      case C extends Kind(100, 6)
+      case D extends Kind(1000, 8)
+
       def stateForPos(position: Pos) = (this, position) match
-        case (A, Pos(2, 2)) => State.Done
-        case (B, Pos(4, 2)) => State.Done
-        case (C, Pos(6, 2)) => State.Done
-        case (D, Pos(8, 2)) => State.Done
-        case _              => State.Unmoved
+        case (A, Pos(2, `roomDepth`)) => State.Done
+        case (B, Pos(4, `roomDepth`)) => State.Done
+        case (C, Pos(6, `roomDepth`)) => State.Done
+        case (D, Pos(8, `roomDepth`)) => State.Done
+        case _                        => State.Unmoved
 
-      def energy = this match
-        case A => 1
-        case B => 10
-        case C => 100
-        case D => 1000
-
-      def destinationX =
-        val x = this match
-          case A => 2
-          case B => 4
-          case C => 6
-          case D => 8
-        (1 to roomDepth).toSeq.map(Pos(x, _))
+      def destinations =
+        (1 to roomDepth).toSeq.map(Pos(destination, _))
 
     private val initialPositions: Seq[Pos] =
       for
@@ -84,187 +77,132 @@ object Day23 extends Day:
         actors: Set[ActorState]
     ):
 
-      def aStarHeuristic =
-        actors.toSeq
-          .filterNot(_.state == State.Done)
-          .map { actor =>
-            (1 + Math.abs(
-              actor.kind.destinationX(0).x - actor.position.x
-            )) * actor.kind.energy
-          }
-          .sum
+      val aStarHeuristic =
+        actors.toSeq.map { case ActorState(kind, Pos(x, y), state) =>
+          val base = Math.abs(kind.destination - x) + 1
+          val total = state match
+            case State.Done      => 0
+            case State.Unmoved   => base + y
+            case State.MovingOut => base + y
+            case _               => base
+          total * kind.energy
+        }.sum
+
       def done: Boolean = actors.forall(_.state == State.Done)
       def occupied(position: Pos) = actors.exists(_.position == position)
 
       def nextStates: Seq[(Int, GameState)] =
-        nextMovingInStates
-          .orElse(nextMovingOutStates)
-          .getOrElse(nextUnmovedStates ++ nextWaitingStates)
+        nextKeepMovingStates.getOrElse(nextStartMovingStates)
 
-      private def update(
-          oldState: ActorState,
-          newState: ActorState
-      ) =
+      private def update(oldState: ActorState, newState: ActorState) =
         this.copy(actors = actors - oldState + newState)
 
-      private def move(oldState: ActorState, newState: ActorState) =
-        (newState.kind.energy, update(oldState, newState))
+      private def move(oldState: ActorState, pos: Pos, state: State) =
+        (
+          oldState.kind.energy,
+          update(oldState, oldState.copy(position = pos, state = state))
+        )
 
-      private def nextUnmovedStates =
-        actors
-          .filter(_.state == State.Unmoved)
-          .toSeq
-          .flatMap { actor =>
-            outPoints(actor.position)
-              .intersect(legalPositions)
-              .filterNot(occupied)
-              .toSeq
+      private def nextKeepMovingStates =
+        actors.collectFirst {
+          case actor @ ActorState(_, _, State.MovingOut) =>
+            movingOutStatesFor(actor)
+          case actor @ ActorState(_, _, State.MovingIn) =>
+            nextMovingInMoves(actor.kind, actor.position).toSeq
               .map { pos =>
-                move(actor, actor.copy(position = pos, state = State.MovingOut))
+                val next = move(actor, pos, State.MovingIn)
+                if actor.kind.destinations.contains(pos) && next._2
+                    .nextMovingInMoves(actor.kind, pos)
+                    .isEmpty
+                then move(actor, pos, State.Done)
+                else next
               }
-          }
-
-      private def nextMovingOutStates =
-        actors
-          .find(_.state == State.MovingOut)
-          .map { actor =>
-            outPoints(actor.position)
-              .intersect(legalPositions)
-              .filterNot(occupied)
-              .toSeq
-              .flatMap { pos =>
-                val nextMove = move(actor, actor.copy(position = pos))
-                if stopPositions.contains(pos) then
-                  Seq(
-                    nextMove,
-                    move(
-                      actor,
-                      actor.copy(position = pos, state = State.Waiting)
-                    )
-                  )
-                else Seq(nextMove)
-              }
-          }
-
-      private def nextMovingInStates: Option[Seq[(Int, GameState)]] =
-        actors.find(_.state == State.MovingIn).map { actor =>
-          nextMovingInMoves(actor.kind, actor.position).toSeq
-            .map { pos =>
-              val next = move(actor, actor.copy(position = pos))
-              val nextMoves = next._2.nextMovingInMoves(actor.kind, pos)
-              if nextMoves.isEmpty && actor.kind.destinationX.contains(pos) then
-                move(actor, actor.copy(position = pos, state = State.Done))
-              else next
-            }
         }
 
+      private def movingOutStatesFor(actor: ActorState) =
+        outPoints(actor.position)
+          .intersect(legalPositions)
+          .filterNot(occupied)
+          .toSeq
+          .flatMap { pos =>
+            val nextMove = move(actor, pos, State.MovingOut)
+            if stopPositions.contains(pos) then
+              Seq(nextMove, move(actor, pos, State.Waiting))
+            else Seq(nextMove)
+          }
+
       private def nextMovingInMoves(kind: Kind, position: Pos) =
-        // Check if it can stop.
-        val destinations = kind.destinationX
-        val destintationX = destinations(0).x
-        (hallPositions ++ destinations)
+        (hallPositions ++ kind.destinations)
           .intersect(inPoints(position))
           .filterNot(occupied)
           .filter(move =>
+            val destintationX = kind.destination
             Math.abs(move.x - destintationX) <= Math
               .abs(position.x - destintationX)
           )
 
-      private def nextWaitingStates =
-        actors
-          .filter(_.state == State.Waiting)
-          .toSeq
-          .flatMap { actor =>
-            nextMovingInMoves(actor.kind, actor.position).toSeq
-              .map { pos =>
-                move(actor, actor.copy(position = pos, state = State.MovingIn))
-              }
-          }
-          .toSeq
+      private def nextStartMovingStates =
+        actors.toSeq.collect {
+          case actor @ ActorState(_, _, State.Unmoved) =>
+            movingOutStatesFor(actor)
+          case actor @ ActorState(_, _, State.Waiting) =>
+            val destinations = actor.kind.destinations.toSet
+            // If only the same kind of actor is in the room, start, otherwise don't.
+            if actors
+                .filter(a => destinations.contains(a.position))
+                .forall(_.kind == actor.kind)
+            then
+              nextMovingInMoves(actor.kind, actor.position).toSeq
+                .map(move(actor, _, State.MovingIn))
+            else Seq()
+        }.flatten
 
-  private def inPoints(point: Pos) = point match {
-    case Pos(x, y) =>
-      Set(
-        Pos(x - 1, y),
-        Pos(x + 1, y),
-        Pos(x, y + 1)
-      )
-  }
+  private def inPoints(point: Pos) =
+    Set(
+      Pos(point.x - 1, point.y),
+      Pos(point.x + 1, point.y),
+      Pos(point.x, point.y + 1)
+    )
 
-  private def outPoints(point: Pos) = point match {
-    case Pos(x, y) =>
-      Set(
-        Pos(x - 1, y),
-        Pos(x + 1, y),
-        Pos(x, y - 1)
-      )
-  }
+  private def outPoints(point: Pos) =
+    Set(
+      Pos(point.x - 1, point.y),
+      Pos(point.x + 1, point.y),
+      Pos(point.x, point.y - 1)
+    )
 
-  private def dijkstra(
+  private def aStar(
       start: Scenario#GameState
   ): Option[(Int, Scenario#GameState)] =
-    // val cameFrom =
-    //   scala.collection.mutable.Map[Scenario#GameState, Scenario#GameState]()
     val gScore =
       scala.collection.mutable.Map(start -> 0).withDefaultValue(Int.MaxValue)
     val visited = scala.collection.mutable.Set[Scenario#GameState]()
 
-    val openSet = scala.collection.mutable
-      .SortedMap(start.aStarHeuristic -> Set(start))
+    val queue =
+      PriorityQueue((start, start.aStarHeuristic))(
+        Ordering.by[(Scenario#GameState, Int), Int](_._2).reverse
+      )
 
-    while (openSet.nonEmpty) {
-      val (k, minSet) = openSet.head
-      val current = minSet.head
-      if minSet.size == 1 then openSet.remove(k)
-      else openSet.update(k, minSet - current)
-
-      if current.done then
-        // println(
-        //   addToPath(start, current, cameFrom, Nil)
-        //     .map(s => (cost(s), s))
-        //     .mkString("\n")
-        // )
-        return Some((gScore(current), current))
-      else
-        visited.add(current)
+    while (queue.nonEmpty) {
+      val current = queue.dequeue._1
+      if current.done then return Some((gScore(current), current))
+      else if visited.add(current) then
         if visited.size % 100000 == 0 then
           println(
-            s"Checked ${visited.size}, queued: ${openSet.foldLeft(0)(_ + _._2.size)}"
+            s"Checked ${visited.size}, queued: ${queue.size}"
           )
-        // println("At: " + current)
-        // println("Neighbours: ")
-        // println(current.nextStates.mkString("\n\t", "\n\t", ""))
+        val currentGScore = gScore(current)
         for {
           (weight, neighbour) <- current.nextStates
           if !visited.contains(neighbour)
         } {
           val oldCost = gScore(neighbour)
-          val newCost = gScore(current) + weight
+          val newCost = currentGScore + weight
           if newCost < oldCost then
-            // cameFrom(neighbour) = current
             val h = neighbour.aStarHeuristic
             gScore(neighbour) = newCost
-            openSet.updateWith(oldCost + h)(
-              _.map(_ - neighbour).flatMap(set =>
-                Option.unless(set.isEmpty)(set)
-              )
-            )
-            openSet.updateWith(newCost + h)(
-              _.map(_ + neighbour).orElse(Some(Set(neighbour)))
-            )
+            queue.enqueue((neighbour, newCost + h))
         }
     }
 
     None
-
-  @tailrec
-  private def addToPath(
-      from: Scenario#GameState,
-      to: Scenario#GameState,
-      cameFromGraph: Scenario#GameState => Scenario#GameState,
-      path: List[Scenario#GameState]
-  ): List[Scenario#GameState] =
-    if from == to then path
-    else
-      val prev = cameFromGraph(to)
-      addToPath(from, prev, cameFromGraph, to :: path)
