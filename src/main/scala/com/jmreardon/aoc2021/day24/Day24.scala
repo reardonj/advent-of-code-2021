@@ -27,36 +27,40 @@ object Day24 extends Day:
       failures: Set[(AluState, Int)] = Set()
   ): Either[String, Set[(AluState, Int)]] =
     executeProgram(state, program) match
-      case Left(needsInput, remaining, newState) =>
+      case (newState, Some(needsInput)) =>
         if failures.contains((newState, depth)) then Right(failures)
         else
           digits
             .foldLeft[Either[String, Set[(AluState, Int)]]](Right(failures)) {
               (result, next) =>
-                val updatedInstructions = needsInput(next) +: remaining
                 result.fold(
                   Left(_),
                   findValidInput(
                     digits,
                     depth + 1,
                     newState,
-                    updatedInstructions,
+                    needsInput(next),
                     _
                   ).left.map(next.toString + _)
                 )
             }
             .map(_ + ((newState, depth)))
-      case Right(result) =>
+      case (result, None) =>
         Either.cond(result.z != 0, failures + ((state, depth)), "")
 
   private def executeProgram(
       state: AluState,
       program: Seq[Instruction]
-  ): Either[(Long => Instruction, Seq[Instruction], AluState), AluState] =
+  ): (AluState, Option[Long => Seq[Instruction]]) =
     program.headOption.map(_.execute(state)) match
-      case None                   => Right(state)
-      case Some(Left(needsInput)) => Left((needsInput, program.tail, state))
-      case Some(Right(newState))  => executeProgram(newState, program.tail)
+      case None => (state, None)
+      case Some(Left(needsInput)) =>
+        (
+          // The program resets these anyways, so reset myself to reduce states.
+          state.copy(w = 0, x = 0, y = 0),
+          Some((x: Long) => needsInput(x) +: program.tail)
+        )
+      case Some(Right(newState)) => executeProgram(newState, program.tail)
 
   private sealed trait Arg:
     def resolve(state: AluState): Long
